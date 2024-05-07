@@ -405,7 +405,7 @@ Cursor* table_start(Table* table)
     return cursor;
 }
 
-CUrsor* table_end(Table* table)
+Cursor* table_end(Table* table)
 {
     Cursor* cursor = malloc(sizeof(cursor));
     cursor->table = table;
