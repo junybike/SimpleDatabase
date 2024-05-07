@@ -5,6 +5,10 @@
 #include <string.h>
 #include <sys/types.h>
 
+#include <errno.h>
+#include <fcntl.h>
+#include <unistd.h>
+
 #define COLUMN_USERNAME_SIZE 32
 #define COLUMN_EMAIL_SIZE 255
 #define TABLE_MAX_PAGES 100
@@ -102,6 +106,7 @@ Pager* pager_open(const char* filename)
     }
     
     off_t file_length = lseek(fd, 0, SEEK_END);
+    Pager* pager = malloc(sizeof(Pager));
     Pager->file_desc = fd;
     pager->file_length = file_length;
 
@@ -140,7 +145,7 @@ Table* db_open(const char* filename)
     Pager* pager = pager_open(filename);
     uint32_t num_rows = pager->file_length / ROW_SIZE;
 
-    Table* table = (Table*)malloc(sizeof(Table));
+    Table* table = malloc(sizeof(Table));
     table->pager = pager;
     table->num_rows = num_rows;
 
@@ -191,15 +196,6 @@ void db_close(Table *table)
         }
     }
     free(pager);
-    free(table);
-}
-
-void free_table(Table* table)
-{
-    for (int i = 0; table->pages[i]; i++)
-    {
-        free(table->pages[i]);
-    }
     free(table);
 }
 
@@ -303,6 +299,7 @@ void* get_page(Pager* pager, uint32_t page_num)
         void* page = malloc(PAGE_SIZE);
         uint32_t num_pages = pager->file_length / PAGE_SIZE;
 
+        // Case where saving partial page at the end of file.
         if (pager->file_length % PAGE_SIZE)
         {
             num_pages++;
