@@ -107,7 +107,7 @@ Pager* pager_open(const char* filename)
     
     off_t file_length = lseek(fd, 0, SEEK_END);
     Pager* pager = malloc(sizeof(Pager));
-    Pager->file_desc = fd;
+    pager->file_desc = fd;
     pager->file_length = file_length;
 
     for (uint32_t i = 0; i < TABLE_MAX_PAGES; i++)
@@ -133,7 +133,7 @@ void pager_flush(Pager* pager, uint32_t page_num, uint32_t size)
     }
 
     ssize_t byte_written = write(pager->file_desc, pager->pages[page_num], size);
-    if (bytes_written == -1)
+    if (byte_written == -1)
     {
         printf("Error: Writing %d", errno);
         exit(EXIT_FAILURE);
@@ -337,7 +337,7 @@ void deserialize_row(void* source, Row* destination)
 void* row_slot(Table* table, uint32_t row_num)
 {
     uint32_t page_num = row_num / ROWS_PER_PAGE;
-    void* page = get_page(table->pager, page->num);
+    void* page = get_page(table->pager, page_num);
 
     uint32_t row_offset = row_num % ROWS_PER_PAGE;
     uint32_t byte_offset = row_offset * ROW_SIZE;
@@ -390,7 +390,7 @@ int main(int argc, char* argv[])
         exit(EXIT_FAILURE);
     }
 
-    char* filename = argc[1];
+    char* filename = argv[1];
     Table* table = db_open(filename);
 
     InputBuffer* input_buf = new_input_buffer();
