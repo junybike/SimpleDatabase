@@ -112,7 +112,7 @@ const uint8_t COMMON_NODE_HEADER_SIZE = NODE_TYPE_SIZE + IS_ROOT_SIZE + PARENT_P
 
 const uint32_t LEAF_NODE_NUM_CELLS_SIZE = sizeof(uint32_t);
 const uint32_t LEAF_NODE_NUM_CELLS_OFFSET = COMMON_NODE_HEADER_SIZE;
-const uint32_t LEAF_NODE_HEADER_SIZE = COMMON_NODE_HEADER_SIZE + LEAF_NODE_NUM_CELLS_SIZE
+const uint32_t LEAF_NODE_HEADER_SIZE = COMMON_NODE_HEADER_SIZE + LEAF_NODE_NUM_CELLS_SIZE;
 
 // Leaf node body layout
 
@@ -288,6 +288,28 @@ void close_input_buffer(InputBuffer* input_buf)
 {
     free(input_buf->buffer);
     free(input_buf);
+}
+
+void print_leaf_node(void* node)
+{
+    uint32_t num_cells = *leaf_node_cell(node);
+    printf("leaf (size %d)\n", num_cells);
+
+    for (uint32_t i = 0; i < num_cells; i++)
+    {
+        uint32_t key = *leaf_node_key(node, i);
+        printf(" - %d : %d\n", i, key);
+    }
+}
+
+void print_constants()
+{
+    printf("ROW_SIZE: %d\n", ROW_SIZE);
+    printf("COMMON_NODE_HEADER_SIZE: %d\n", COMMON_NODE_HEADER_SIZE);
+    printf("LEAF_NODE_HEADER_SIZE: %d\n", LEAF_NODE_HEADER_SIZE);
+    printf("LEAF_NODE_CELL_SIZE: %d\n", LEAF_NODE_CELL_SIZE);
+    printf("LEAF_NODE_SPACE_FOR_CELLS: %d\n", LEAF_NODE_SPACE_FOR_CELLS);
+    printf("LEAF_NODE_MAX_CELLS: %d\n", LEAF_NODE_MAX_CELLS);
 }
 
 MetaCommandResult do_meta_command(InputBuffer* input_buf, Table *table)
@@ -528,28 +550,6 @@ void leaf_node_insert(Cursor* cursor, uint32_t key, Row* value)
     *(leaf_node_num_cells(node)) += 1;
     *(leaf_node_key(node, cursor->cell_num)) = key;
     serialize_row(value, leaf_node_value(node, cursor->cell_num));
-}
-
-void print_constants()
-{
-    printf("ROW_SIZE: %d\n", ROW_SIZE);
-    printf("COMMON_NODE_HEADER_SIZE: %d\n", COMMON_NODE_HEADER_SIZE);
-    printf("LEAF_NODE_HEADER_SIZE: %d\n", LEAF_NODE_HEADER_SIZE);
-    printf("LEAF_NODE_CELL_SIZE: %d\n", LEAF_NODE_CELL_SIZE);
-    printf("LEAF_NODE_SPACE_FOR_CELLS: %d\n", LEAF_NODE_SPACE_FOR_CELLS);
-    printf("LEAF_NODE_MAX_CELLS: %d\n", LEAF_NODE_MAX_CELLS);
-}
-
-void print_leaf_node(void* node)
-{
-    uint32_t num_cells = *leaf_node_cell(node);
-    printf("leaf (size %d)\n", num_cells);
-
-    for (uint32_t i = 0; i < num_cells; i++)
-    {
-        uint32_t key = *leaf_node_key(node, i);
-        printf(" - %d : %d\n", i, key);
-    }
 }
 
 int main(int argc, char* argv[])
