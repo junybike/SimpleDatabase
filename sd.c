@@ -134,7 +134,7 @@ NodeType get_node_type(void* node)
 void set_node_type(void* node, NodeType type)
 {
     uint8_t value = type;
-    *((uint8_t)(node + NODE_TYPE_OFFSET)) = value;
+    *((uint8_t*)(node + NODE_TYPE_OFFSET)) = value;
 }
 
 uint32_t* leaf_node_num_cells(void* node)
