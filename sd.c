@@ -330,8 +330,8 @@ void* get_page(Pager* pager, uint32_t page_num)
 void serialize_row(Row* source, void* destination)
 {
     memcpy(destination + ID_OFFSET, &(source->id), ID_SIZE);
-    strncpy(destination + USERNAME_OFFSET, &(source->username), USERNAME_SIZE);
-    strncpy(destination + EMAIL_OFFSET, &(source->email), EMAIL_SIZE);
+    strncpy(destination + USERNAME_OFFSET, (source->username), USERNAME_SIZE);
+    strncpy(destination + EMAIL_OFFSET, (source->email), EMAIL_SIZE);
 }
 
 void deserialize_row(void* source, Row* destination)
@@ -353,6 +353,35 @@ void* cursor_value(Cursor* cursor)
     return page + byte_offset;
 }
 
+Cursor* table_start(Table* table)
+{
+    Cursor* cursor = malloc(sizeof(Cursor));
+    cursor->table = table;
+    cursor->row_num = 0;
+    cursor->end_of_table = (table->num_rows == 0);
+
+    return cursor;
+}
+
+Cursor* table_end(Table* table)
+{
+    Cursor* cursor = malloc(sizeof(Cursor));
+    cursor->table = table;
+    cursor->row_num = table->num_rows;
+    cursor->end_of_table = true;
+
+    return cursor;
+}
+
+void cursor_advance(Cursor* cursor)
+{
+    cursor->row_num += 1;
+    if (cursor->row_num >= cursor->table->num_rows)
+    {
+        cursor->end_of_table = true;
+    }
+}
+
 ExecuteResult execute_insert(Statement* statement, Table* table)
 {
     if (table->num_rows >= TABLE_MAX_ROWS)
@@ -361,6 +390,7 @@ ExecuteResult execute_insert(Statement* statement, Table* table)
     }
 
     Row* row_to_insert = &(statement->row_to_insert);
+    Cursor* cursor = table_end(table);
     serialize_row(row_to_insert, cursor_value(cursor));
 
     table->num_rows += 1;
@@ -395,35 +425,6 @@ ExecuteResult execute_statement(Statement* statement, Table* table)
             return execute_select(statement, table);
     }
     return EXECUTE_TABLE_FULL;
-}
-
-Cursor* table_start(Table* table)
-{
-    Cursor* cursor = malloc(sizeof(Cursor));
-    cursor->table = table;
-    cursor->row_num = 0;
-    cursor->end_of_table = (table->num_rows == 0);
-
-    return cursor;
-}
-
-Cursor* table_end(Table* table)
-{
-    Cursor* cursor = malloc(sizeof(Cursor));
-    cursor->table = table;
-    cursor->row_num = table->num_rows;
-    cursor->end_of_table = true;
-
-    return cursor;
-}
-
-void cursor_advance(Cursor* cursor)
-{
-    cursor->row_num += 1;
-    if (cursor->row_num >= cursor->table->num_rows)
-    {
-        cursor->end_of_table = true;
-    }
 }
 
 int main(int argc, char* argv[])
