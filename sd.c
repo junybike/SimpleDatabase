@@ -145,6 +145,12 @@ void* leaf_node_value(void* node, uint32_t cell_num)
     return leaf_node_cell(node, cell_num) + LEAF_NODE_KEY_SIZE;
 }
 
+void set_node_type(void* node, NodeType type)
+{
+    uint8_t value = type;
+    *((uint8_t)(node + NODE_TYPE_OFFSET)) = value;
+}
+
 void initialize_leaf_node(void* node)
 {
     set_node_type(node, NODE_LEAF);
@@ -513,12 +519,6 @@ Cursor* table_find(Table* table, uint32_t key)
         printf("Need to implement searching an internal node.");
         exit(EXIT_FAILURE);
     }
-}
-
-void set_node_type(void* node, NodeType type)
-{
-    uint8_t value = type;
-    *((uint8_t)(node + NODE_TYPE_OFFSET)) = value;
 }
 
 void cursor_advance(Cursor* cursor)
