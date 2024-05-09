@@ -211,6 +211,46 @@ void pager_flush(Pager* pager, uint32_t page_num)
     }
 }
 
+void* get_page(Pager* pager, uint32_t page_num)
+{
+    if (page_num > TABLE_MAX_PAGES)
+    {
+        printf("Error: Tried to fetch page number out of bounds. %d > %d",page_num, TABLE_MAX_PAGES);
+        exit(EXIT_FAILURE);
+    }
+
+    if (pager->pages[page_num] == NULL)
+    {
+        // Cache miss. Allocate memory and load from file.
+        void* page = malloc(PAGE_SIZE);
+        uint32_t num_pages = pager->file_length / PAGE_SIZE;
+
+        // Case where saving partial page at the end of file.
+        if (pager->file_length % PAGE_SIZE)
+        {
+            num_pages++;
+        }
+
+        if (page_num <= num_pages)
+        {
+            lseek(pager->file_desc, page_num * PAGE_SIZE, SEEK_SET);
+            ssize_t bytes_read = read(pager->file_desc, page, PAGE_SIZE);
+            if (bytes_read == -1)
+            {
+                printf("Error: Fail to read file '%d'\n", errno);
+                exit(EXIT_FAILURE);
+            }
+        }
+        pager->pages[page_num] = page;
+
+        if (page_num >= pager->num_pages)
+        {
+            pager->num_pages = page_num + 1;
+        }
+    }
+    return pager->pages[page_num];
+}
+
 Table* db_open(const char* filename)
 {
     Pager* pager = pager_open(filename);
@@ -292,7 +332,7 @@ void close_input_buffer(InputBuffer* input_buf)
 
 void print_leaf_node(void* node)
 {
-    uint32_t num_cells = *leaf_node_cell(node);
+    uint32_t num_cells = *leaf_node_num_cells(node);
     printf("leaf (size %d)\n", num_cells);
 
     for (uint32_t i = 0; i < num_cells; i++)
@@ -380,46 +420,6 @@ PrepareResult prepare_statement(InputBuffer* input_buf, Statement* statement)
         return PREPARE_SUCCESS;
     }
     return PREPARE_FAIL;
-}
-
-void* get_page(Pager* pager, uint32_t page_num)
-{
-    if (page_num > TABLE_MAX_PAGES)
-    {
-        printf("Error: Tried to fetch page number out of bounds. %d > %d",page_num, TABLE_MAX_PAGES);
-        exit(EXIT_FAILURE);
-    }
-
-    if (pager->pages[page_num] == NULL)
-    {
-        // Cache miss. Allocate memory and load from file.
-        void* page = malloc(PAGE_SIZE);
-        uint32_t num_pages = pager->file_length / PAGE_SIZE;
-
-        // Case where saving partial page at the end of file.
-        if (pager->file_length % PAGE_SIZE)
-        {
-            num_pages++;
-        }
-
-        if (page_num <= num_pages)
-        {
-            lseek(pager->file_desc, page_num * PAGE_SIZE, SEEK_SET);
-            ssize_t bytes_read = read(pager->file_desc, page, PAGE_SIZE);
-            if (bytes_read == -1)
-            {
-                printf("Error: Fail to read file '%d'\n", errno);
-                exit(EXIT_FAILURE);
-            }
-        }
-        pager->pages[page_num] = page;
-
-        if (page_num >= pager->num_pages)
-        {
-            pager->num_pages = page_num + 1;
-        }
-    }
-    return pager->pages[page_num];
 }
 
 void serialize_row(Row* source, void* destination)
