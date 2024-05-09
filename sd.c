@@ -362,6 +362,7 @@ ExecuteResult execute_insert(Statement* statement, Table* table)
 
     Row* row_to_insert = &(statement->row_to_insert);
     serialize_row(row_to_insert, cursor_value(cursor));
+
     table->num_rows += 1;
     free(cursor);
     
@@ -372,10 +373,11 @@ ExecuteResult execute_select(Statement* statement, Table* table)
 {
     Cursor* cursor = table_start(table);
     Row row;
+
     while (!(cursor->end_of_table))
     {
         deserialize_row(cursor_value(cursor), &row);
-        printf(&row);
+        print_row(&row);
         cursor_advance(cursor);
     }
     free(cursor);
@@ -397,7 +399,7 @@ ExecuteResult execute_statement(Statement* statement, Table* table)
 
 Cursor* table_start(Table* table)
 {
-    Cursor* cursor = malloc(sizeof(cursor));
+    Cursor* cursor = malloc(sizeof(Cursor));
     cursor->table = table;
     cursor->row_num = 0;
     cursor->end_of_table = (table->num_rows == 0);
@@ -407,7 +409,7 @@ Cursor* table_start(Table* table)
 
 Cursor* table_end(Table* table)
 {
-    Cursor* cursor = malloc(sizeof(cursor));
+    Cursor* cursor = malloc(sizeof(Cursor));
     cursor->table = table;
     cursor->row_num = table->num_rows;
     cursor->end_of_table = true;
