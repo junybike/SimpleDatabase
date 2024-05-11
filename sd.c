@@ -388,7 +388,7 @@ uint32_t* internal_node_key(void* node, uint32_t key_num)
     return internal_node_cell(node, key_num) + INTERNAL_NODE_CHILD_SIZE;
 }
 
-uint32_t get_unused_page_num(Pager* pager);
+uint32_t get_unused_page_num(Pager* pager)
 {
     return pager->num_pages;
 }
@@ -645,6 +645,7 @@ uint32_t get_node_max_key(void* node)
         case NODE_LEAF:
             return *leaf_node_key(node, *leaf_node_num_cells(node) - 1);
     }
+    return 0;
 }
 
 void initialize_internal_node(void* node)
@@ -737,7 +738,7 @@ void leaf_node_insert(Cursor* cursor, uint32_t key, Row* value)
     if (num_cells >= LEAF_NODE_MAX_CELLS)
     {
         leaf_node_split_and_insert(cursor, key, value);
-        return
+        return;
     }
     if (cursor->cell_num < num_cells)
     {
