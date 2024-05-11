@@ -175,6 +175,12 @@ void* leaf_node_value(void* node, uint32_t cell_num)
     return leaf_node_cell(node, cell_num) + LEAF_NODE_KEY_SIZE;
 }
 
+void set_node_root(void* node, bool is_root)
+{
+    uint8_t value = is_root;
+    *((uint8_t*)(node + IS_ROOT_OFFSET)) = value;
+}
+
 void initialize_leaf_node(void* node)
 {
     set_node_type(node, NODE_LEAF);
@@ -369,6 +375,49 @@ void indent(uint32_t level)
     for (uint32_t i = 0; i < level; i++)    
     {
         printf("  ");
+    }
+}
+
+uint32_t* internal_node_cell(void* node, uint32_t cell_num)
+{
+    return node + INTERNAL_NODE_HEADER_SIZE + cell_num * INTERNAL_NODE_CELL_SIZE;
+}
+
+uint32_t* internal_node_key(void* node, uint32_t key_num)
+{
+    return internal_node_cell(node, key_num) + INTERNAL_NODE_CHILD_SIZE;
+}
+
+uint32_t get_unused_page_num(Pager* pager);
+{
+    return pager->num_pages;
+}
+
+uint32_t* internal_node_num_keys(void* node)
+{
+    return node + INTERNAL_NODE_NUM_KEYS_OFFSET;
+}
+
+uint32_t* internal_node_right_child(void* node)
+{
+    return node + INTERNAL_NODE_RIGHT_CHILD_OFFSET;
+}
+
+uint32_t* internal_node_child(void* node, uint32_t child_num)
+{
+    uint32_t num_keys = *internal_node_num_keys(node);
+    if (child_num > num_keys)
+    {
+        printf("Tried to access child_num %d > num_keys %d\n", child_num, num_keys);
+        exit(EXIT_FAILURE);
+    }
+    else if (child_num == num_keys)
+    {
+        return internal_node_right_child(node);
+    }
+    else
+    {
+        return internal_node_cell(node, child_num);
     }
 }
 
@@ -586,65 +635,6 @@ void cursor_advance(Cursor* cursor)
     }
 }
 
-void leaf_node_insert(Cursor* cursor, uint32_t key, Row* value)
-{
-    void* node = get_page(cursor->table->pager, cursor->page_num);
-    uint32_t num_cells = *leaf_node_num_cells(node);
-    
-    if (num_cells >= LEAF_NODE_MAX_CELLS)
-    {
-        leaf_node_split_and_insert(cursor, key, value);
-        return
-    }
-    if (cursor->cell_num < num_cells)
-    {
-        for (uint32_t i = num_cells; i > cursor->cell_num; i--)
-        {
-            memcpy(leaf_node_cell(node, i), leaf_node_cell(node, i - 1), LEAF_NODE_CELL_SIZE);
-        }
-    }
-    *(leaf_node_num_cells(node)) += 1;
-    *(leaf_node_key(node, cursor->cell_num)) = key;
-    serialize_row(value, leaf_node_value(node, cursor->cell_num));
-}
-
-uint32_t get_unused_page_num(Pager* pager);
-{
-    return pager->num_pages;
-}
-
-uint32_t* internal_node_num_keys(void* node)
-{
-    return node + INTERNAL_NODE_NUM_KEYS_OFFSET;
-}
-
-uint32_t* internal_node_right_child(void* node)
-{
-    return node + INTERNAL_NODE_RIGHT_CHILD_OFFSET;
-}
-
-uint32_t* internal_node_child(void* node, uint32_t child_num)
-{
-    uint32_t num_keys = *internal_node_num_keys(node);
-    if (child_num > num_keys)
-    {
-        printf("Tried to access child_num %d > num_keys %d\n", child_num, num_keys);
-        exit(EXIT_FAILURE);
-    }
-    else if (child_num == num_keys)
-    {
-        return internal_node_right_child(node);
-    }
-    else
-    {
-        return internal_node_cell(node, child_num);
-    }
-}
-
-uint32_t* internal_node_key(void* node, uint32_t key_num)
-{
-    return internal_node_cell(node, key_num) + INTERNAL_NODE_CHILD_SIZE;
-}
 
 uint32_t get_node_max_key(void* node)
 {
@@ -688,12 +678,6 @@ bool is_node_root(void* node)
 {
     uint8_t value = *((uint8_t*)(node + IS_ROOT_OFFSET));
     return (bool)value;
-}
-
-void set_node_root(void* node, bool is_root)
-{
-    uint8_t value = is_root;
-    *((uint8_t*)(node + IS_ROOT_OFFSET)) = value;
 }
 
 void leaf_node_split_and_insert(Cursor* cursor, uint32_t key, Row* value)
@@ -743,6 +727,28 @@ void leaf_node_split_and_insert(Cursor* cursor, uint32_t key, Row* value)
         printf("Need to implement updating parent after split\n");
         exit(EXIT_FAILURE);
     }
+}
+
+void leaf_node_insert(Cursor* cursor, uint32_t key, Row* value)
+{
+    void* node = get_page(cursor->table->pager, cursor->page_num);
+    uint32_t num_cells = *leaf_node_num_cells(node);
+    
+    if (num_cells >= LEAF_NODE_MAX_CELLS)
+    {
+        leaf_node_split_and_insert(cursor, key, value);
+        return
+    }
+    if (cursor->cell_num < num_cells)
+    {
+        for (uint32_t i = num_cells; i > cursor->cell_num; i--)
+        {
+            memcpy(leaf_node_cell(node, i), leaf_node_cell(node, i - 1), LEAF_NODE_CELL_SIZE);
+        }
+    }
+    *(leaf_node_num_cells(node)) += 1;
+    *(leaf_node_key(node, cursor->cell_num)) = key;
+    serialize_row(value, leaf_node_value(node, cursor->cell_num));
 }
 
 ExecuteResult execute_insert(Statement* statement, Table* table)
