@@ -1,5 +1,5 @@
 # SimpleDatabase
-A Simple Database based on SQLite by following a tutorial from [stack](https://github.com/cstack). [Link](https://cstack.github.io/db_tutorial/)
+A Simple Database based on SQLite by following a tutorial from [cstack](https://github.com/cstack). [Link](https://cstack.github.io/db_tutorial/)
 
 ## In this project...
 -	Experimented with building a simple database by reading a tutorial on cloning SQLite using C
