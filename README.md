@@ -4,7 +4,8 @@ A Simple Database based on SQLite by following a tutorial from [cstack](https://
 ## In this project...
 -	Experimented with building a simple database by reading a tutorial on cloning SQLite using C
 -	Replicated the system by taking user data from the frontend tokenizer, delivering an instruction to an SQL-based virtual machine, and then storing the data into the backend data structure to minimize the complexity.
--	https://cstack.github.io/db_tutorial/
+-	Minimized overall complexity and errors by implementing a virtual machine that delivers data from tokenizer to
+storage.
 
 ## About:
 - This database functions with a virtual-machine-styled interface
